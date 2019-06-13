@@ -247,7 +247,7 @@ func (wac *Conn) RestoreSession(session Session) (Session, error) {
 	wac.listener["s1"] = make(chan string, 1)
 
 	//admin init
-	init := []interface{}{"admin", "init", []int{0, 3, 225}, []string{wac.longClientName, wac.shortClientName}, session.ClientId, true}
+	init := []interface{}{"admin", "init", []int{0, 3, 3320}, []string{wac.longClientName, wac.shortClientName}, session.ClientId, true}
 	initChan, err := wac.write(init)
 	if err != nil {
 		wac.session = nil
