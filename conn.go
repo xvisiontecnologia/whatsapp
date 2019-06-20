@@ -131,7 +131,7 @@ Creates a new connection with a given timeout. The websocket connection to the W
 The goroutine for handling incoming messages is started
 */
 func NewConn(timeout time.Duration) (*Conn, error) {
-	return NewConnWithClientName(timeout, "chatpro.com.br", "chatpro")
+	return NewConnWithClientName(timeout, "xpro.me", "Xpro")
 }
 
 func NewConnWithClientName(timeout time.Duration, clientName, shortClientName string) (*Conn, error) {
