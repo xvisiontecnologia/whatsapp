@@ -385,9 +385,8 @@ func (wac *Conn) Restore() error {
 	select {
 	case r := <-initChan:
 		var resp map[string]interface{}
-		fmt.Errorf(r)
 		if err = json.Unmarshal([]byte(r), &resp); err != nil {
-			return fmt.Errorf("error decoding login connResp: %v\n", err)
+			return fmt.Errorf("error decoding login connResp: %v - %v\n", err, r)
 		}
 
 		if int(resp["status"].(float64)) != 200 {
