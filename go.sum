@@ -1,6 +1,6 @@
 github.com/Baozisoftware/qrcode-terminal-go v0.0.0-20170407111555-c0650d8dff0f h1:2dk3eOnYllh+wUOuDhOoC2vUVoJF/5z478ryJ+wzEII=
 github.com/Baozisoftware/qrcode-terminal-go v0.0.0-20170407111555-c0650d8dff0f/go.mod h1:4a58ifQTEe2uwwsaqbh3i2un5/CBPg+At/qHpt18Tmk=
-github.com/Rhymen/go-whatsapp v0.0.0/go.mod h1:rdQr95g2C1xcOfM7QGOhza58HeI3I+tZ/bbluv7VazA=
+github.com/xvisiontecnologia/whatsapp v0.0.0/go.mod h1:rdQr95g2C1xcOfM7QGOhza58HeI3I+tZ/bbluv7VazA=
 github.com/xvisiontecnologia/whatsapp/examples/echo v0.0.0-20190325075644-cc2581bbf24d h1:m3wkrunHupL9XzzM+JZu1pgoDV1d9LFtD0gedNTHVDU=
 github.com/xvisiontecnologia/whatsapp/examples/echo v0.0.0-20190325075644-cc2581bbf24d/go.mod h1:zgCiQtBtZ4P4gFWvwl9aashsdwOcbb/EHOGRmSzM8ME=
 github.com/xvisiontecnologia/whatsapp/examples/restoreSession v0.0.0-20190325075644-cc2581bbf24d h1:muQlzqfZxjptOBjPdv+UoxVMr8Y1rPx7VMGPJIAFc5w=

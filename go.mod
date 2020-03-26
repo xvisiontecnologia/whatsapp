@@ -1,4 +1,4 @@
-module github.com/Rhymen/go-whatsapp
+module github.com/xvisiontecnologia/whatsapp
 
 require (
 	github.com/xvisiontecnologia/whatsapp/examples/echo v0.0.0-20190325075644-cc2581bbf24d // indirect
