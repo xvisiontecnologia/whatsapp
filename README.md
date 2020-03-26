@@ -3,14 +3,14 @@ Package rhymen/go-whatsapp implements the WhatsApp Web API to provide a clean in
 
 ## Installation
 ```sh
-go get github.com/Rhymen/go-whatsapp
+go get github.com/xvisiontecnologia/whatsapp
 ```
 
 ## Usage
 ### Creating a connection
 ```go
 import (
-    whatsapp "github.com/Rhymen/go-whatsapp"
+    whatsapp "github.com/xvisiontecnologia/whatsapp"
 )
 
 wac, err := whatsapp.NewConn(20 * time.Second)
