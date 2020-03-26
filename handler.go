@@ -3,6 +3,7 @@ package whatsapp
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/xvisiontecnologia/whatsapp/binary"
 	"github.com/xvisiontecnologia/whatsapp/binary/proto"
@@ -17,6 +18,11 @@ dispatched through this handler. They are returned as an error on the specific f
 */
 type Handler interface {
 	HandleError(err error)
+}
+
+type SyncHandler interface {
+	Handler
+	ShouldCallSynchronously() bool
 }
 
 /*
@@ -60,6 +66,14 @@ type DocumentMessageHandler interface {
 }
 
 /*
+The LiveLocationMessageHandler interface needs to be implemented to receive live location messages dispatched by the dispatcher.
+*/
+type LiveLocationMessageHandler interface {
+	Handler
+	HandleLiveLocationMessage(message LiveLocationMessage)
+}
+
+/*
 The LocationMessageHandler interface needs to be implemented to receive location messages dispatched by the dispatcher.
 */
 type LocationMessageHandler interface {
@@ -68,11 +82,19 @@ type LocationMessageHandler interface {
 }
 
 /*
-The LiveLocationMessageHandler interface needs to be implemented to receive live location messages dispatched by the dispatcher.
+The StickerMessageHandler interface needs to be implemented to receive sticker messages dispatched by the dispatcher.
 */
-type LiveLocationMessageHandler interface {
+type StickerMessageHandler interface {
 	Handler
-	HandleLiveLocationMessage(message LiveLocationMessage)
+	HandleStickerMessage(message StickerMessage)
+}
+
+/*
+The ContactMessageHandler interface needs to be implemented to receive contact messages dispatched by the dispatcher.
+*/
+type ContactMessageHandler interface {
+	Handler
+	HandleContactMessage(message ContactMessage)
 }
 
 /*
@@ -95,6 +117,22 @@ type RawMessageHandler interface {
 	HandleRawMessage(message *proto.WebMessageInfo)
 }
 
+/**
+The ContactListHandler interface needs to be implemented to applky custom actions to contact lists dispatched by the dispatcher.
+*/
+type ContactListHandler interface {
+	Handler
+	HandleContactList(contacts []Contact)
+}
+
+/**
+The ChatListHandler interface needs to be implemented to apply custom actions to chat lists dispatched by the dispatcher.
+*/
+type ChatListHandler interface {
+	Handler
+	HandleChatList(contacts []Chat)
+}
+
 /*
 AddHandler adds an handler to the list of handler that receive dispatched messages.
 The provided handler must at least implement the Handler interface. Additionally implemented
@@ -105,72 +143,225 @@ func (wac *Conn) AddHandler(handler Handler) {
 	wac.handler = append(wac.handler, handler)
 }
 
-func handleMessage(message interface{}, handlers []Handler) {
+// RemoveHandler removes a handler from the list of handlers that receive dispatched messages.
+func (wac *Conn) RemoveHandler(handler Handler) bool {
+	i := -1
+	for k, v := range wac.handler {
+		if v == handler {
+			i = k
+			break
+		}
+	}
+	if i > -1 {
+		wac.handler = append(wac.handler[:i], wac.handler[i+1:]...)
+		return true
+	}
+	return false
+}
+
+// RemoveHandlers empties the list of handlers that receive dispatched messages.
+func (wac *Conn) RemoveHandlers() {
+	wac.handler = make([]Handler, 0)
+}
+
+func (wac *Conn) shouldCallSynchronously(handler Handler) bool {
+	sh, ok := handler.(SyncHandler)
+	return ok && sh.ShouldCallSynchronously()
+}
+
+func (wac *Conn) handle(message interface{}) {
+	wac.handleWithCustomHandlers(message, wac.handler)
+}
+
+func (wac *Conn) handleWithCustomHandlers(message interface{}, handlers []Handler) {
 	switch m := message.(type) {
 	case error:
 		for _, h := range handlers {
-			go h.HandleError(m)
+			if wac.shouldCallSynchronously(h) {
+				h.HandleError(m)
+			} else {
+				go h.HandleError(m)
+			}
 		}
 	case string:
 		for _, h := range handlers {
 			if x, ok := h.(JsonMessageHandler); ok {
-				go x.HandleJsonMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleJsonMessage(m)
+				} else {
+					go x.HandleJsonMessage(m)
+				}
 			}
 		}
 	case TextMessage:
 		for _, h := range handlers {
 			if x, ok := h.(TextMessageHandler); ok {
-				go x.HandleTextMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleTextMessage(m)
+				} else {
+					go x.HandleTextMessage(m)
+				}
 			}
 		}
 	case ImageMessage:
 		for _, h := range handlers {
 			if x, ok := h.(ImageMessageHandler); ok {
-				go x.HandleImageMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleImageMessage(m)
+				} else {
+					go x.HandleImageMessage(m)
+				}
 			}
 		}
 	case VideoMessage:
 		for _, h := range handlers {
 			if x, ok := h.(VideoMessageHandler); ok {
-				go x.HandleVideoMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleVideoMessage(m)
+				} else {
+					go x.HandleVideoMessage(m)
+				}
 			}
 		}
 	case AudioMessage:
 		for _, h := range handlers {
 			if x, ok := h.(AudioMessageHandler); ok {
-				go x.HandleAudioMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleAudioMessage(m)
+				} else {
+					go x.HandleAudioMessage(m)
+				}
 			}
 		}
 	case DocumentMessage:
 		for _, h := range handlers {
 			if x, ok := h.(DocumentMessageHandler); ok {
-				go x.HandleDocumentMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleDocumentMessage(m)
+				} else {
+					go x.HandleDocumentMessage(m)
+				}
 			}
 		}
 	case LocationMessage:
 		for _, h := range handlers {
 			if x, ok := h.(LocationMessageHandler); ok {
-				go x.HandleLocationMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleLocationMessage(m)
+				} else {
+					go x.HandleLocationMessage(m)
+				}
 			}
 		}
 	case LiveLocationMessage:
 		for _, h := range handlers {
 			if x, ok := h.(LiveLocationMessageHandler); ok {
-				go x.HandleLiveLocationMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleLiveLocationMessage(m)
+				} else {
+					go x.HandleLiveLocationMessage(m)
+				}
 			}
 		}
+
+	case StickerMessage:
+		for _, h := range handlers {
+			if x, ok := h.(StickerMessageHandler); ok {
+				if wac.shouldCallSynchronously(h) {
+					x.HandleStickerMessage(m)
+				} else {
+					go x.HandleStickerMessage(m)
+				}
+			}
+		}
+
+	case ContactMessage:
+		for _, h := range handlers {
+			if x, ok := h.(ContactMessageHandler); ok {
+				if wac.shouldCallSynchronously(h) {
+					x.HandleContactMessage(m)
+				} else {
+					go x.HandleContactMessage(m)
+				}
+			}
+		}
+
 	case *proto.WebMessageInfo:
 		for _, h := range handlers {
 			if x, ok := h.(RawMessageHandler); ok {
-				go x.HandleRawMessage(m)
+				if wac.shouldCallSynchronously(h) {
+					x.HandleRawMessage(m)
+				} else {
+					go x.HandleRawMessage(m)
+				}
 			}
 		}
 	}
 
 }
 
-func (wac *Conn) handle(message interface{}) {
-	handleMessage(message, wac.handler)
+func (wac *Conn) handleContacts(contacts interface{}) {
+	var contactList []Contact
+	c, ok := contacts.([]interface{})
+	if !ok {
+		return
+	}
+	for _, contact := range c {
+		contactNode, ok := contact.(binary.Node)
+		if !ok {
+			continue
+		}
+
+		jid := strings.Replace(contactNode.Attributes["jid"], "@c.us", "@s.whatsapp.net", 1)
+		contactList = append(contactList, Contact{
+			jid,
+			contactNode.Attributes["notify"],
+			contactNode.Attributes["name"],
+			contactNode.Attributes["short"],
+		})
+	}
+	for _, h := range wac.handler {
+		if x, ok := h.(ContactListHandler); ok {
+			if wac.shouldCallSynchronously(h) {
+				x.HandleContactList(contactList)
+			} else {
+				go x.HandleContactList(contactList)
+			}
+		}
+	}
+}
+
+func (wac *Conn) handleChats(chats interface{}) {
+	var chatList []Chat
+	c, ok := chats.([]interface{})
+	if !ok {
+		return
+	}
+	for _, chat := range c {
+		chatNode, ok := chat.(binary.Node)
+		if !ok {
+			continue
+		}
+
+		jid := strings.Replace(chatNode.Attributes["jid"], "@c.us", "@s.whatsapp.net", 1)
+		chatList = append(chatList, Chat{
+			jid,
+			chatNode.Attributes["name"],
+			chatNode.Attributes["count"],
+			chatNode.Attributes["t"],
+			chatNode.Attributes["mute"],
+			chatNode.Attributes["spam"],
+		})
+	}
+	for _, h := range wac.handler {
+		if x, ok := h.(ChatListHandler); ok {
+			if wac.shouldCallSynchronously(h) {
+				x.HandleChatList(chatList)
+			} else {
+				go x.HandleChatList(chatList)
+			}
+		}
+	}
 }
 
 func (wac *Conn) dispatch(msg interface{}) {
@@ -185,12 +376,16 @@ func (wac *Conn) dispatch(msg interface{}) {
 				for a := range con {
 					if v, ok := con[a].(*proto.WebMessageInfo); ok {
 						wac.handle(v)
-						wac.handle(parseProtoMessage(v))
+						wac.handle(ParseProtoMessage(v))
 					}
 				}
 			}
 		} else if message.Description == "response" && message.Attributes["type"] == "contacts" {
 			wac.updateContacts(message.Content)
+			wac.handleContacts(message.Content)
+		} else if message.Description == "response" && message.Attributes["type"] == "chat" {
+			wac.updateChats(message.Content)
+			wac.handleChats(message.Content)
 		}
 	case error:
 		wac.handle(message)

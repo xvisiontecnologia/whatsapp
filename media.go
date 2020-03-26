@@ -74,17 +74,24 @@ func downloadMedia(url string) (file []byte, mac []byte, err error) {
 		return nil, nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, nil, fmt.Errorf("download failed, status code %d", resp.StatusCode)
+		if resp.StatusCode == 404 {
+			return nil, nil, ErrMediaDownloadFailedWith404
+		}
+		if resp.StatusCode == 410 {
+			return nil, nil, ErrMediaDownloadFailedWith410
+		}
+		return nil, nil, fmt.Errorf("download failed with status code %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 	if resp.ContentLength <= 10 {
-		return nil, nil, fmt.Errorf("file too short")
+		return nil, nil, fmt.Errorf("file to short")
 	}
 	data, err := ioutil.ReadAll(resp.Body)
-	n := len(data)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	n := len(data)
 	return data[:n-10], data[n-10 : n], nil
 }
 
@@ -134,7 +141,7 @@ func (wac *Conn) Upload(reader io.Reader, appInfo MediaType) (url string, mediaK
 	}
 
 	uploadReq := []interface{}{"action", "encr_upload", filetype, base64.StdEncoding.EncodeToString(fileEncSha256)}
-	ch, err := wac.write(uploadReq)
+	ch, err := wac.writeJson(uploadReq)
 	if err != nil {
 		return "", nil, nil, nil, 0, err
 	}
@@ -143,7 +150,7 @@ func (wac *Conn) Upload(reader io.Reader, appInfo MediaType) (url string, mediaK
 	select {
 	case r := <-ch:
 		if err = json.Unmarshal([]byte(r), &resp); err != nil {
-			return "", nil, nil, nil, 0, fmt.Errorf("error decoding upload response: %v\n", err)
+			return "", nil, nil, nil, 0, fmt.Errorf("error decoding upload response: %v", err)
 		}
 	case <-time.After(wac.msgTimeout):
 		return "", nil, nil, nil, 0, fmt.Errorf("restore session init timed out")

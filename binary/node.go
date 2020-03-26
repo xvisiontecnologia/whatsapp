@@ -2,7 +2,6 @@ package binary
 
 import (
 	"fmt"
-
 	pb "github.com/xvisiontecnologia/whatsapp/binary/proto"
 	"github.com/golang/protobuf/proto"
 )
@@ -67,9 +66,12 @@ func Unmarshal(data []byte) (*Node, error) {
 	}
 
 	if n != nil && n.Attributes != nil && n.Content != nil {
-		n.Content, err = unmarshalMessageArray(n.Content.([]Node))
-		if err != nil {
-			return nil, err
+		nContent, ok := n.Content.([]Node)
+		if ok {
+			n.Content, err = unmarshalMessageArray(nContent)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

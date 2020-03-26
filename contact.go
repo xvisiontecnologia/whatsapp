@@ -2,69 +2,37 @@ package whatsapp
 
 import (
 	"fmt"
+	"github.com/xvisiontecnologia/whatsapp/binary"
 	"strconv"
 	"time"
-
-	"github.com/xvisiontecnologia/whatsapp/binary"
 )
 
 type Presence string
 
 const (
-	PresenceAvailable   = "available"
-	PresenceUnavailable = "unavailable"
-	PresenceComposing   = "composing"
+	PresenceAvailable   Presence = "available"
+	PresenceUnavailable Presence = "unavailable"
+	PresenceComposing   Presence = "composing"
+	PresenceRecording   Presence = "recording"
+	PresencePaused      Presence = "paused"
 )
 
 //TODO: filename? WhatsApp uses Store.Contacts for these functions
-//TODO: functions probably shouldn't return a string, maybe build a struct / return json
-//TODO: check for further queries
+// functions probably shouldn't return a string, maybe build a struct / return json
+// check for further queries
 func (wac *Conn) GetProfilePicThumb(jid string) (<-chan string, error) {
 	data := []interface{}{"query", "ProfilePicThumb", jid}
-	return wac.write(data)
+	return wac.writeJson(data)
 }
 
 func (wac *Conn) GetStatus(jid string) (<-chan string, error) {
 	data := []interface{}{"query", "Status", jid}
-	return wac.write(data)
-}
-
-func (wac *Conn) GetGroupMetaData(jid string) (<-chan string, error) {
-	data := []interface{}{"query", "GroupMetadata", jid}
-	return wac.write(data)
+	return wac.writeJson(data)
 }
 
 func (wac *Conn) SubscribePresence(jid string) (<-chan string, error) {
 	data := []interface{}{"action", "presence", "subscribe", jid}
-	return wac.write(data)
-}
-
-func (wac *Conn) CreateGroup(subject string, participants []string) (<-chan string, error) {
-	return wac.setGroup("create", "", subject, participants)
-}
-
-func (wac *Conn) UpdateGroupSubject(subject string, jid string) (<-chan string, error) {
-	return wac.setGroup("subject", jid, subject, nil)
-}
-
-func (wac *Conn) SetAdmin(jid string, participants []string) (<-chan string, error) {
-	return wac.setGroup("promote", jid, "", participants)
-}
-
-func (wac *Conn) RemoveAdmin(jid string, participants []string) (<-chan string, error) {
-	return wac.setGroup("demote", jid, "", participants)
-}
-
-func (wac *Conn) AddMember(jid string, participants []string) (<-chan string, error) {
-	return wac.setGroup("add", jid, "", participants)
-}
-
-func (wac *Conn) RemoveMember(jid string, participants []string) (<-chan string, error) {
-	return wac.setGroup("remove", jid, "", participants)
-}
-
-func (wac *Conn) LeaveGroup(jid string) (<-chan string, error) {
-	return wac.setGroup("leave", jid, "", nil)
+	return wac.writeJson(data)
 }
 
 func (wac *Conn) Search(search string, count, page int) (*binary.Node, error) {
@@ -83,9 +51,28 @@ func (wac *Conn) LoadMessagesAfter(jid, messageId string, count int) (*binary.No
 	return wac.query("message", jid, messageId, "after", "true", "", count, 0)
 }
 
+func (wac *Conn) LoadMediaInfo(jid, messageId, owner string) (*binary.Node, error) {
+	return wac.query("media", jid, messageId, "", owner, "", 0, 0)
+}
+
 func (wac *Conn) Presence(jid string, presence Presence) (<-chan string, error) {
 	ts := time.Now().Unix()
 	tag := fmt.Sprintf("%d.--%d", ts, wac.msgCount)
+
+	content := binary.Node{
+		Description: "presence",
+		Attributes: map[string]string{
+			"type": string(presence),
+		},
+	}
+	switch presence {
+	case PresenceComposing:
+		fallthrough
+	case PresenceRecording:
+		fallthrough
+	case PresencePaused:
+		content.Attributes["to"] = jid
+	}
 
 	n := binary.Node{
 		Description: "action",
@@ -93,12 +80,7 @@ func (wac *Conn) Presence(jid string, presence Presence) (<-chan string, error) 
 			"type":  "set",
 			"epoch": strconv.Itoa(wac.msgCount),
 		},
-		Content: []interface{}{binary.Node{
-			Description: "presence",
-			Attributes: map[string]string{
-				"type": string(presence),
-			},
-		}},
+		Content: []interface{}{content},
 	}
 
 	return wac.writeBinary(n, group, ignore, tag)
@@ -106,7 +88,7 @@ func (wac *Conn) Presence(jid string, presence Presence) (<-chan string, error) 
 
 func (wac *Conn) Exist(jid string) (<-chan string, error) {
 	data := []interface{}{"query", "exist", jid}
-	return wac.write(data)
+	return wac.writeJson(data)
 }
 
 func (wac *Conn) Emoji() (*binary.Node, error) {
@@ -185,7 +167,12 @@ func (wac *Conn) query(t, jid, messageId, kind, owner, search string, count, pag
 		n.Attributes["page"] = strconv.Itoa(page)
 	}
 
-	ch, err := wac.writeBinary(n, group, ignore, tag)
+	metric := group
+	if t == "media" {
+		metric = queryMedia
+	}
+
+	ch, err := wac.writeBinary(n, metric, ignore, tag)
 	if err != nil {
 		return nil, err
 	}
