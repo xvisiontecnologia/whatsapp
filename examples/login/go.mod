@@ -5,4 +5,4 @@ require (
 	github.com/xvisiontecnologia/whatsapp v0.0.0
 )
 
-replace github.com/Rhymen/go-whatsapp => ../../
+replace github.com/xvisiontecnologia/whatsapp => ../../
