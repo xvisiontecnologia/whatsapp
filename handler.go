@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/xvisiontecnologia/whatsapp/binary"
-	"github.com/xvisiontecnologia/whatsapp/binary/proto"
+	"github.com/Rhymen/go-whatsapp/binary"
+	"github.com/Rhymen/go-whatsapp/binary/proto"
 )
 
 /*

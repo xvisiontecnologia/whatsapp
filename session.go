@@ -18,7 +18,7 @@ import (
 )
 
 //represents the WhatsAppWeb client version
-var waVersion = []int{0,4,2080}
+var waVersion = []int{0, 4, 2080}
 
 /*
 Session contains session individual information. To be able to resume the connection without scanning the qr code
@@ -151,7 +151,7 @@ func (wac *Conn) SetClientName(long, short string) error {
 
 /*
 SetClientVersion sets WhatsApp client version
-Default value is 0.3.3324
+Default value is 0.4.2080
 */
 func (wac *Conn) SetClientVersion(major int, minor int, patch int) {
 	waVersion = []int{major, minor, patch}
@@ -386,7 +386,7 @@ func (wac *Conn) Restore() error {
 	case r := <-initChan:
 		var resp map[string]interface{}
 		if err = json.Unmarshal([]byte(r), &resp); err != nil {
-			return fmt.Errorf(" - 1 - error decoding login connResp: %v - %v\n", err, r)
+			return fmt.Errorf("error decoding login connResp: %v\n", err)
 		}
 
 		if int(resp["status"].(float64)) != 200 {
@@ -410,7 +410,7 @@ func (wac *Conn) Restore() error {
 		case r := <-loginChan:
 			var resp map[string]interface{}
 			if err = json.Unmarshal([]byte(r), &resp); err != nil {
-				return fmt.Errorf(" - 2 - error decoding login connResp: %v - %v\n", err, r)
+				return fmt.Errorf("error decoding login connResp: %v\n", err)
 			}
 			if int(resp["status"].(float64)) != 200 {
 				return fmt.Errorf("admin login responded with %d", int(resp["status"].(float64)))
@@ -447,7 +447,7 @@ func (wac *Conn) Restore() error {
 	case r := <-loginChan:
 		var resp map[string]interface{}
 		if err = json.Unmarshal([]byte(r), &resp); err != nil {
-			return fmt.Errorf(" - 3 - error decoding login connResp: %v - %v\n", err, r)
+			return fmt.Errorf("error decoding login connResp: %v\n", err)
 		}
 
 		if int(resp["status"].(float64)) != 200 {
