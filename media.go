@@ -157,6 +157,9 @@ func (wac *Conn) Upload(reader io.Reader, appInfo MediaType) (url string, mediaK
 	}
 
 	if int(resp["status"].(float64)) != 200 {
+		fmt.Fprintf("ERROR STATUS")
+		fmt.Fprintf(ch)
+		fmt.Fprintf(resp)
 		return "", nil, nil, nil, 0, fmt.Errorf("upload responsed with %d", resp["status"])
 	}
 
