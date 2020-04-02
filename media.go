@@ -141,6 +141,7 @@ func (wac *Conn) Upload(reader io.Reader, appInfo MediaType) (url string, mediaK
 	}
 
 	uploadReq := []interface{}{"action", "encr_upload", filetype, base64.StdEncoding.EncodeToString(fileEncSha256)}
+	fmt.Fprintf(os.Stderr, "uploadReq: %v\n", uploadReq)
 	ch, err := wac.writeJson(uploadReq)
 	if err != nil {
 		return "", nil, nil, nil, 0, err
@@ -149,6 +150,7 @@ func (wac *Conn) Upload(reader io.Reader, appInfo MediaType) (url string, mediaK
 	var resp map[string]interface{}
 	select {
 	case r := <-ch:
+		fmt.Fprintf(os.Stderr, "uploadReq: %v\n", json.Unmarshal([]byte(r), &resp))
 		if err = json.Unmarshal([]byte(r), &resp); err != nil {
 			return "", nil, nil, nil, 0, fmt.Errorf("error decoding upload response: %v", err)
 		}
