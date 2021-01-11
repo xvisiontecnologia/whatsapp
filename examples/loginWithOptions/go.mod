@@ -1,4 +1,4 @@
-module github.com/xvisiontecnologia/whatsapp/examples/login
+module github.com/xvisiontecnologia/whatsapp/examples/loginWithOptions
 
 go 1.14
 

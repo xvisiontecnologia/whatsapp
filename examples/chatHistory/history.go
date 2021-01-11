@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/xvisiontecnologia/whatsapp"
 	"log"
 	"time"
+
+	"github.com/xvisiontecnologia/whatsapp"
 )
 
 // historyHandler for acquiring chat history
