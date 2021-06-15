@@ -6,3 +6,5 @@ require (
 )
 
 replace github.com/xvisiontecnologia/whatsapp => ../../
+
+go 1.13
